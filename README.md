@@ -1,55 +1,264 @@
-## Project: Chromosome Architecture and Gene Content Organization in Acinetobacter baumannii
+# Abaumannii_ChromArch
 
+Chromosome architecture and core-genome population structure analysis for
+*Acinetobacter baumannii*.
 
-### Description: 
+## Overview
 
-This project aims to characterize the chromosome architecture of Acinetobacter baumannii by adapting and implementing the analytical framework described in the study:
+This repository contains scripts and documentation used to adapt a chromosome
+architecture analysis framework to *Acinetobacter baumannii* genomes. The
+project focuses on the organization of the core genome, population structure
+inferred from core-genome SNPs, and the relationship between genomic clusters,
+geographic origin, and MLST profiles.
 
-    Castro-Jaimes, S., Bello-López, E., Velázquez-Acosta, C., Volkow-Fernández, P., Lozano-Zarain, P., Castillo-Ramírez, S., & Cevallos, M. A. (2020). Chromosome Architecture and Gene Content of the Emergent Pathogen Acinetobacter haemolyticus. Frontiers in Microbiology, 11, 926. https://doi.org/10.3389/fmicb.2020.00926
+The work is based on the analytical rationale described in:
 
-The objective is to investigate how genomic organization relates to pangenome structure, focusing on the distribution of core genes along the chromosome, conservation of syntenic blocks, and the identification of variable regions potentially associated with horizontal gene transfer.
+Castro-Jaimes, S., Bello-Lopez, E., Velazquez-Acosta, C.,
+Volkow-Fernandez, P., Lozano-Zarain, P., Castillo-Ramirez, S., & Cevallos,
+M. A. (2020). Chromosome architecture and gene content of the emergent pathogen
+*Acinetobacter haemolyticus*. *Frontiers in Microbiology*, 11, 926.
+https://doi.org/10.3389/fmicb.2020.00926
 
-Rather than developing a pipeline de novo, this project seeks to analyze, adapt, and reimplement relevant components of the methodology described in the reference study in order to apply them to A. baumannii genomes.
+Rather than providing a fully generalized pipeline, this repository preserves
+the project scripts used for genome organization, annotation, core-genome
+alignment, SNP-based clustering, and summary visualization.
 
+## Repository Structure
 
-### Usage: 
+```text
+.
+├── original_scripts/
+│   ├── core_genome/
+│   └── functional_annotation/
+├── remote_scripts/
+│   ├── core_genome/
+│   └── functional_annotation/
+├── verify_scripts_2/
+│   ├── core_genome/
+│   └── functional_annotation/
+├── LICENSE
+└── README.md
+```
 
-Detailed usage instructions will be added in future updates.
+- `original_scripts/`: baseline scripts for the project analyses.
+- `remote_scripts/`: server-oriented versions with additional script headers and
+  documentation.
+- `verify_scripts_2/`: verification copies used while checking script behavior
+  and reproducibility.
 
+The script folders are intentionally kept separate because they may represent
+different review stages. They should not be assumed to be identical.
 
-### Output: 
+## Analysis Workflow
 
-### Error handling: 
+The current workflow is organized into the following analysis blocks.
 
-### Testing: 
+### 1. Genome File Organization
 
+`core_genome/organize_ncbi_genomes.sh` reorganizes files downloaded from NCBI
+datasets into project-specific folders for:
 
-### Data: 
+- genomic FASTA files (`.fna`)
+- coding sequences
+- GFF annotations
+- GenBank flat files
+- protein FASTA files
 
-Data availability statements will be added in future updates. 
-    
+This step prepares the input structure expected by downstream scripts.
 
-### Metadata and documentation 
+### 2. Functional Annotation
 
-### Source code
+`functional_annotation/prokka_all_genomes.sh` runs Prokka on all genome FASTA
+files in the project input directory. Outputs are written into one directory per
+genome accession.
 
-The source code is available in this repository. Contributions, improvements, and suggestions are welcome through pull requests. 
+The script sets annotation parameters for *Acinetobacter baumannii* and builds
+reproducible locus tags from RefSeq or GenBank accession identifiers.
 
+### 3. Core-Genome Alignment
 
-### Terms of use
+`core_genome/parsnp.sh` runs Parsnp using a selected reference genome and the
+project genome FASTA collection. Parsnp outputs are written under
+`results/parsnp/` and include the core-genome alignment, tree, VCF, and related
+files.
 
-This project is distributed under the MIT LICENSE. Please refer to the LICENSE file for details.
+`core_genome/pgdspider.sh` converts the Parsnp XMFA alignment to PHYLIP format
+with PGDSpider, producing the alignment used for downstream clustering.
 
+### 4. Population Structure with hierBAPS
 
-### How to cite
+`core_genome/hierbaps.R` loads the Parsnp PHYLIP alignment, removes
+non-informative sites, writes an informative-site FASTA alignment, and runs
+hierBAPS with two clustering levels.
 
-If you use this repository in your research, please cite it as follows:
+Main outputs include:
 
-Cristo-Martínez, S. Y., Escobedo Muñoz, A. S. & Cevallos Gaos, M. A. (2026). **Abaumannii_ChromArch: Chromosome Architecture and Gene Content Organization in Acinetobacter baumannii** (Version 1.0). GitHub. [https://github.com/silvanaycristo/Abaumannii_ChromArch](https://github.com/silvanaycristo/Abaumannii_ChromArch)
+- `hierbaps_clusters.csv`
+- `hierbaps_result.rds`
+- `parsnp_informative_sites.fasta`
 
-Once the project is published or presented, update this section with the appropriate citation format.
+### 5. Cluster Summaries and Metadata Integration
 
+The downstream R scripts summarize how hierBAPS clusters relate to available
+metadata:
 
-### Contact
+- `hierbaps_mlst.R`: summarizes cluster composition by Pasteur MLST sequence
+  type and removes duplicate RefSeq accessions introduced by reference handling.
+- `hierbaps_geography.R`: summarizes cluster composition by geographic origin.
+- `plot_heatmap_level1_vs_mlst.R`: plots level 1 clusters against MLST.
+- `plot_heatmap_level1_vs_geography.R`: plots level 1 clusters against
+  geographic origin.
 
-For issues, questions, or collaborations, please open an issue in this repository or contact us at: Silvana Yalú Cristo-Martínez (silvanac@lcg.unam.mx), Sofel Escobedo-Muñoz (aescobed@lcg.unam.mx), & Miguel Ángel Cevallos-Gaos (mac@ccg.unam.mx)
+### 6. Core-SNP PCA and Tree Visualization
+
+- `pca_snprelate.R`: converts the Parsnp VCF to GDS, runs PCA with SNPRelate,
+  saves explained variance, and plots PC1/PC2 colored by hierBAPS level 1.
+- `plot_parsnp_tree_hierbaps.R`: plots the Parsnp tree colored by hierBAPS
+  level 1 and level 2 assignments.
+
+## Expected Inputs
+
+The scripts expect the project to be organized under a server-side directory
+similar to:
+
+```text
+/export/space3/users/silvanac/Abaumannii_ChromArch
+```
+
+Expected input folders include:
+
+```text
+data/genomes_ncbi/raw_download/ncbi_dataset/data/
+data/genomes_ncbi/fasta/
+data/genomes_ncbi/cds/
+data/genomes_ncbi/gff/
+data/genomes_ncbi/gbff/
+data/genomes_ncbi/protein/
+```
+
+Genome files and large analysis outputs are not tracked in this repository.
+
+## Main Outputs
+
+Depending on the script, outputs are expected under:
+
+```text
+results/prokka/
+results/parsnp/
+results/hierbaps/
+logs/
+```
+
+Representative outputs include:
+
+- Prokka annotation directories for each genome
+- Parsnp core-genome alignment and tree files
+- PHYLIP and FASTA alignments for informative sites
+- hierBAPS cluster assignments
+- MLST and geography cluster summaries
+- PCA variance tables and PDF plots
+- Parsnp tree visualizations colored by cluster assignment
+
+## Software Requirements
+
+The scripts use a combination of command-line tools and R packages.
+
+Command-line tools:
+
+- Bash
+- Parsnp
+- PGDSpider2
+- Java, required by PGDSpider
+- Prokka
+
+R packages:
+
+- `ape`
+- `rhierbaps`
+- `readr`
+- `dplyr`
+- `ggplot2`
+- `gdsfmt`
+- `SNPRelate`
+
+Package versions are not pinned in the repository yet. For reproducible reruns,
+record the software versions used on the analysis server.
+
+## Usage Notes
+
+Most scripts currently contain absolute project paths for the Chaac server. If
+running the analyses elsewhere, update the path variables at the top of each
+script before execution.
+
+Recommended execution pattern:
+
+```bash
+bash original_scripts/core_genome/organize_ncbi_genomes.sh
+bash original_scripts/functional_annotation/prokka_all_genomes.sh
+bash original_scripts/core_genome/parsnp.sh
+bash original_scripts/core_genome/pgdspider.sh
+Rscript original_scripts/core_genome/hierbaps.R
+Rscript original_scripts/core_genome/hierbaps_mlst.R
+Rscript original_scripts/core_genome/hierbaps_geography.R
+Rscript original_scripts/core_genome/pca_snprelate.R
+Rscript original_scripts/core_genome/plot_parsnp_tree_hierbaps.R
+Rscript original_scripts/core_genome/plot_heatmap_level1_vs_mlst.R
+Rscript original_scripts/core_genome/plot_heatmap_level1_vs_geography.R
+```
+
+Before running long jobs, check whether outputs already exist and redirect logs
+for expensive steps.
+
+## Reproducibility Status
+
+This repository is currently a project script archive rather than a packaged,
+parameterized workflow. The main reproducibility limitations are:
+
+- absolute server paths in scripts
+- untracked input genomes and large outputs
+- no locked software environment file yet
+- multiple script folders that may represent different review stages
+
+Recommended future improvements:
+
+- add a project configuration file for paths and thread counts
+- add an environment file with exact tool and R package versions
+- consolidate reviewed scripts into a single canonical workflow directory
+- add a small test dataset or dry-run mode
+- document the metadata table schema expected by downstream scripts
+
+## Data Availability
+
+Input genomes are expected to come from NCBI datasets. Large genome files,
+intermediate alignments, annotation outputs, and result folders are excluded
+from this repository to keep it lightweight.
+
+When publishing or sharing the analysis, include accession lists, download
+commands, software versions, and any metadata curation steps needed to recreate
+the dataset.
+
+## Citation
+
+If you use this repository in your research, please cite:
+
+Cristo-Martinez, S. Y., Escobedo Munoz, A. S., & Cevallos Gaos, M. A. (2026).
+*Abaumannii_ChromArch: Chromosome architecture and gene content organization in
+Acinetobacter baumannii* (Version 1.0). GitHub.
+https://github.com/silvanaycristo/Abaumannii_ChromArch
+
+Once the project is published or presented, update this section with the final
+citation format.
+
+## License
+
+This project is distributed under the MIT License. See the `LICENSE` file for
+details.
+
+## Contact
+
+For questions, issues, or collaborations, please open an issue in this
+repository or contact:
+
+- Silvana Yalu Cristo-Martinez: silvanac@lcg.unam.mx
+- Sofel Escobedo-Munoz: aescobed@lcg.unam.mx
+- Miguel Angel Cevallos-Gaos: mac@ccg.unam.mx
