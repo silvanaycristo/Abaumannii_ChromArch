@@ -27,27 +27,15 @@ alignment, SNP-based clustering, and summary visualization.
 
 ```text
 .
-├── original_scripts/
-│   ├── core_genome/
-│   └── functional_annotation/
-├── remote_scripts/
-│   ├── core_genome/
-│   └── functional_annotation/
-├── verify_scripts_2/
+├── scripts/
 │   ├── core_genome/
 │   └── functional_annotation/
 ├── LICENSE
 └── README.md
 ```
 
-- `original_scripts/`: baseline scripts for the project analyses.
-- `remote_scripts/`: server-oriented versions with additional script headers and
-  documentation.
-- `verify_scripts_2/`: verification copies used while checking script behavior
-  and reproducibility.
-
-The script folders are intentionally kept separate because they may represent
-different review stages. They should not be assumed to be identical.
+- `scripts/core_genome/`: scripts for genome file organization, Parsnp alignment, PGDSpider conversion, hierBAPS clustering, PCA, and cluster visualizations.
+- `scripts/functional_annotation/`: scripts for batch genome annotation with Prokka.
 
 ## Analysis Workflow
 
@@ -55,7 +43,7 @@ The current workflow is organized into the following analysis blocks.
 
 ### 1. Genome File Organization
 
-`core_genome/organize_ncbi_genomes.sh` reorganizes files downloaded from NCBI
+`scripts/core_genome/organize_ncbi_genomes.sh` reorganizes files downloaded from NCBI
 datasets into project-specific folders for:
 
 - genomic FASTA files (`.fna`)
@@ -68,7 +56,7 @@ This step prepares the input structure expected by downstream scripts.
 
 ### 2. Functional Annotation
 
-`functional_annotation/prokka_all_genomes.sh` runs Prokka on all genome FASTA
+`scripts/functional_annotation/prokka_all_genomes.sh` runs Prokka on all genome FASTA
 files in the project input directory. Outputs are written into one directory per
 genome accession.
 
@@ -77,17 +65,17 @@ reproducible locus tags from RefSeq or GenBank accession identifiers.
 
 ### 3. Core-Genome Alignment
 
-`core_genome/parsnp.sh` runs Parsnp using a selected reference genome and the
+`scripts/core_genome/parsnp.sh` runs Parsnp using a selected reference genome and the
 project genome FASTA collection. Parsnp outputs are written under
 `results/parsnp/` and include the core-genome alignment, tree, VCF, and related
 files.
 
-`core_genome/pgdspider.sh` converts the Parsnp XMFA alignment to PHYLIP format
+`scripts/core_genome/pgdspider.sh` converts the Parsnp XMFA alignment to PHYLIP format
 with PGDSpider, producing the alignment used for downstream clustering.
 
 ### 4. Population Structure with hierBAPS
 
-`core_genome/hierbaps.R` loads the Parsnp PHYLIP alignment, removes
+`scripts/core_genome/hierbaps.R` loads the Parsnp PHYLIP alignment, removes
 non-informative sites, writes an informative-site FASTA alignment, and runs
 hierBAPS with two clustering levels.
 
@@ -193,17 +181,17 @@ script before execution.
 Recommended execution pattern:
 
 ```bash
-bash original_scripts/core_genome/organize_ncbi_genomes.sh
-bash original_scripts/functional_annotation/prokka_all_genomes.sh
-bash original_scripts/core_genome/parsnp.sh
-bash original_scripts/core_genome/pgdspider.sh
-Rscript original_scripts/core_genome/hierbaps.R
-Rscript original_scripts/core_genome/hierbaps_mlst.R
-Rscript original_scripts/core_genome/hierbaps_geography.R
-Rscript original_scripts/core_genome/pca_snprelate.R
-Rscript original_scripts/core_genome/plot_parsnp_tree_hierbaps.R
-Rscript original_scripts/core_genome/plot_heatmap_level1_vs_mlst.R
-Rscript original_scripts/core_genome/plot_heatmap_level1_vs_geography.R
+bash scripts/core_genome/organize_ncbi_genomes.sh
+bash scripts/functional_annotation/prokka_all_genomes.sh
+bash scripts/core_genome/parsnp.sh
+bash scripts/core_genome/pgdspider.sh
+Rscript scripts/core_genome/hierbaps.R
+Rscript scripts/core_genome/hierbaps_mlst.R
+Rscript scripts/core_genome/hierbaps_geography.R
+Rscript scripts/core_genome/pca_snprelate.R
+Rscript scripts/core_genome/plot_parsnp_tree_hierbaps.R
+Rscript scripts/core_genome/plot_heatmap_level1_vs_mlst.R
+Rscript scripts/core_genome/plot_heatmap_level1_vs_geography.R
 ```
 
 Before running long jobs, check whether outputs already exist and redirect logs
@@ -217,14 +205,11 @@ parameterized workflow. The main reproducibility limitations are:
 - absolute server paths in scripts
 - untracked input genomes and large outputs
 - no locked software environment file yet
-- multiple script folders that may represent different review stages
 
 Recommended future improvements:
 
 - add a project configuration file for paths and thread counts
-- add an environment file with exact tool and R package versions
-- consolidate reviewed scripts into a single canonical workflow directory
-- add a small test dataset or dry-run mode
+- add an environment file with exact tool and R package versions- add a small test dataset or dry-run mode
 - document the metadata table schema expected by downstream scripts
 
 ## Data Availability
